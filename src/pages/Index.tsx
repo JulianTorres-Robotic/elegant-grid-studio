@@ -1,4 +1,4 @@
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import SidebarLayout from "@/components/dashboard/SidebarLayout";
 import KPICard from "@/components/dashboard/KPICard";
 import ChartCard from "@/components/dashboard/ChartCard";
 import DataTableCard from "@/components/dashboard/DataTableCard";
@@ -6,7 +6,7 @@ import RoleSwitcher from "@/components/dashboard/RoleSwitcher";
 import { kpis } from "@/data/mockData";
 
 const Index = () => (
-  <DashboardLayout>
+  <SidebarLayout>
     {/* Role switcher for testing */}
     <RoleSwitcher />
 
@@ -30,7 +30,7 @@ const Index = () => (
       </div>
       <ChartCard type="pie" />
     </div>
-  </DashboardLayout>
+  </SidebarLayout>
 );
 
 export default Index;
