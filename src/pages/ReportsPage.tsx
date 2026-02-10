@@ -1,9 +1,9 @@
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import SidebarLayout from "@/components/dashboard/SidebarLayout";
 import NeuCard from "@/components/dashboard/NeuCard";
 import { BarChart3 } from "lucide-react";
 
 const ReportsPage = () => (
-  <DashboardLayout>
+  <SidebarLayout>
     <NeuCard className="flex flex-col items-center justify-center py-20 gap-4">
       <div className="neu-card-sm p-4 rounded-2xl">
         <BarChart3 className="h-10 w-10 text-primary" />
@@ -13,7 +13,7 @@ const ReportsPage = () => (
         Genera y visualiza reportes detallados sobre la actividad del sistema y métricas de rendimiento.
       </p>
     </NeuCard>
-  </DashboardLayout>
+  </SidebarLayout>
 );
 
 export default ReportsPage;

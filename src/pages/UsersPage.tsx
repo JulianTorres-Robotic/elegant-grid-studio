@@ -1,9 +1,9 @@
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import SidebarLayout from "@/components/dashboard/SidebarLayout";
 import NeuCard from "@/components/dashboard/NeuCard";
 import { Users } from "lucide-react";
 
 const UsersPage = () => (
-  <DashboardLayout>
+  <SidebarLayout>
     <NeuCard className="flex flex-col items-center justify-center py-20 gap-4">
       <div className="neu-card-sm p-4 rounded-2xl">
         <Users className="h-10 w-10 text-primary" />
@@ -13,7 +13,7 @@ const UsersPage = () => (
         Aquí podrás administrar los usuarios del sistema, asignar roles y gestionar permisos por grupo.
       </p>
     </NeuCard>
-  </DashboardLayout>
+  </SidebarLayout>
 );
 
 export default UsersPage;
