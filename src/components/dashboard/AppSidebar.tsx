@@ -34,14 +34,9 @@ const menuSections = [
     ],
   },
   {
-    title: "TIC",
+    title: "Operaciones",
     items: [
       { label: "Gestión Colegios", icon: School, route: "/tic-colegios" },
-    ],
-  },
-  {
-    title: "Profesores",
-    items: [
       { label: "Licencias Profesores", icon: GraduationCap, route: "/licencias-profesores" },
     ],
   },
