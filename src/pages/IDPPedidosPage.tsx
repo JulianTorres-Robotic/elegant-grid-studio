@@ -1,164 +1,162 @@
 import { useState } from "react";
-import SidebarLayout from "@/components/dashboard/SidebarLayout";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import NeuCard from "@/components/dashboard/NeuCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Download, FileText, Edit, Eye } from "lucide-react";
-import { pedidosLicencia, colegios, robots, type PedidoLicencia } from "@/data/moduleData";
+import { FileText, Plus, X, Check } from "lucide-react";
+import { colegios, robots, cartillas } from "@/data/moduleData";
+import { useToast } from "@/hooks/use-toast";
 
-const estadoColors: Record<string, string> = {
-  Aprobado: "bg-success text-success-foreground",
-  "En Proceso": "bg-primary text-primary-foreground",
-  Pendiente: "bg-warning text-warning-foreground",
-  Rechazado: "bg-destructive text-destructive-foreground",
+interface PedidoCard {
+  id: number;
+  cantidad: string;
+  colegio: string;
+  robot: string;
+  cartilla: string;
+}
+
+const SearchableSelect = ({
+  value,
+  onValueChange,
+  placeholder,
+  options,
+}: {
+  value: string;
+  onValueChange: (v: string) => void;
+  placeholder: string;
+  options: string[];
+}) => {
+  const [search, setSearch] = useState("");
+  const filtered = options.filter((o) => o.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger>
+      <SelectContent>
+        <div className="px-2 pb-2">
+          <Input
+            placeholder="Buscar..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 text-sm"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+        {filtered.length === 0 && <p className="text-sm text-muted-foreground px-3 py-2">Sin resultados</p>}
+        {filtered.map((o) => (
+          <SelectItem key={o} value={o}>{o}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 };
 
 const IDPPedidosPage = () => {
-  const [filtroLicencia, setFiltroLicencia] = useState("");
-  const [filtroColegio, setFiltroColegio] = useState("");
-  const [filtroRobot, setFiltroRobot] = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [nuevoColegio, setNuevoColegio] = useState("");
-  const [nuevoRobot, setNuevoRobot] = useState("");
+  const { toast } = useToast();
+  const [cards, setCards] = useState<PedidoCard[]>([
+    { id: 1, cantidad: "", colegio: "", robot: "", cartilla: "" },
+  ]);
 
-  const filtered = pedidosLicencia.filter((p) => {
-    if (filtroLicencia && !p.licencia.toLowerCase().includes(filtroLicencia.toLowerCase())) return false;
-    if (filtroColegio && p.colegio !== filtroColegio) return false;
-    if (filtroRobot && p.robot !== filtroRobot) return false;
-    return true;
-  });
+  const addCard = () => {
+    setCards((prev) => [...prev, { id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "" }]);
+  };
+
+  const removeCard = (id: number) => {
+    if (cards.length === 1) return;
+    setCards((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const updateCard = (id: number, field: keyof Omit<PedidoCard, "id">, value: string) => {
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  };
+
+  const handleConfirm = () => {
+    const incomplete = cards.some((c) => !c.cantidad || !c.colegio || !c.robot || !c.cartilla);
+    if (incomplete) {
+      toast({ title: "Campos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Pedido confirmado", description: `${cards.length} pedido(s) enviado(s) correctamente.` });
+    setCards([{ id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "" }]);
+  };
 
   return (
-    <SidebarLayout>
+    <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">IDP - Pedidos de Licencia</h1>
-          </div>
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" /> Exportar a .xlsx
+        <div className="flex items-center gap-3">
+          <FileText className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">IDP - Pedidos de Licencias</h1>
+        </div>
+
+        {/* Pedido cards */}
+        <div className="space-y-4">
+          {cards.map((card, idx) => (
+            <NeuCard key={card.id} className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Pedido #{idx + 1}
+                </h3>
+                {cards.length > 1 && (
+                  <button onClick={() => removeCard(card.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label># Licencias <span className="text-destructive">*</span></Label>
+                  <Input
+                    type="number"
+                    placeholder="Cantidad"
+                    value={card.cantidad}
+                    onChange={(e) => updateCard(card.id, "cantidad", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Colegio <span className="text-destructive">*</span></Label>
+                  <SearchableSelect
+                    value={card.colegio}
+                    onValueChange={(v) => updateCard(card.id, "colegio", v)}
+                    placeholder="Seleccionar colegio"
+                    options={colegios}
+                  />
+                </div>
+                <div>
+                  <Label>Robot <span className="text-destructive">*</span></Label>
+                  <SearchableSelect
+                    value={card.robot}
+                    onValueChange={(v) => updateCard(card.id, "robot", v)}
+                    placeholder="Seleccionar robot"
+                    options={robots}
+                  />
+                </div>
+                <div>
+                  <Label>Nº Cartilla <span className="text-destructive">*</span></Label>
+                  <SearchableSelect
+                    value={card.cartilla}
+                    onValueChange={(v) => updateCard(card.id, "cartilla", v)}
+                    placeholder="Seleccionar cartilla"
+                    options={cartillas}
+                  />
+                </div>
+              </div>
+            </NeuCard>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={addCard} className="gap-2">
+            <Plus className="h-4 w-4" /> Agregar Pedido
+          </Button>
+          <Button onClick={handleConfirm} className="gap-2">
+            <Check className="h-4 w-4" /> Confirmar
           </Button>
         </div>
-
-        {/* Filters + Creation form */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Filters */}
-          <NeuCard className="p-5">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Filtro de Búsqueda</h3>
-            <div className="space-y-3">
-              <div>
-                <Label>Licencia</Label>
-                <Input placeholder="Buscar por licencia..." value={filtroLicencia} onChange={(e) => setFiltroLicencia(e.target.value)} />
-              </div>
-              <div>
-                <Label>Colegio</Label>
-                <Select value={filtroColegio} onValueChange={setFiltroColegio}>
-                  <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {colegios.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Robot</Label>
-                <Select value={filtroRobot} onValueChange={setFiltroRobot}>
-                  <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {robots.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button className="w-full gap-2" onClick={() => { setFiltroColegio(""); setFiltroRobot(""); setFiltroLicencia(""); }}>
-                <Search className="h-4 w-4" /> Limpiar Filtros
-              </Button>
-            </div>
-          </NeuCard>
-
-          {/* Creation form */}
-          <NeuCard className="p-5">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Crear Pedido</h3>
-            <div className="space-y-3">
-              <div>
-                <Label># Licencias</Label>
-                <Input type="number" placeholder="Cantidad" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
-              </div>
-              <div>
-                <Label>Colegio</Label>
-                <Select value={nuevoColegio} onValueChange={setNuevoColegio}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar colegio" /></SelectTrigger>
-                  <SelectContent>
-                    {colegios.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Robot</Label>
-                <Select value={nuevoRobot} onValueChange={setNuevoRobot}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar robot" /></SelectTrigger>
-                  <SelectContent>
-                    {robots.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 gap-2"><Plus className="h-4 w-4" /> Agg</Button>
-                <Button className="flex-1">Confirmar</Button>
-              </div>
-            </div>
-          </NeuCard>
-        </div>
-
-        {/* Orders table */}
-        <NeuCard className="p-5 overflow-x-auto">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Pedidos Registrados</h3>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left">
-                <th className="pb-3 font-semibold text-muted-foreground">ID</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Licencia</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Colegio</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Robot</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Cant.</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Estado</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Fecha</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="py-3 font-mono text-xs">{p.id}</td>
-                  <td className="py-3">{p.licencia}</td>
-                  <td className="py-3">{p.colegio}</td>
-                  <td className="py-3">{p.robot}</td>
-                  <td className="py-3 text-center">{p.cantidad}</td>
-                  <td className="py-3">
-                    <Badge className={estadoColors[p.estado]}>{p.estado}</Badge>
-                  </td>
-                  <td className="py-3 text-muted-foreground">{p.fecha}</td>
-                  <td className="py-3">
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7"><Edit className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7"><Eye className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No se encontraron pedidos.</p>
-          )}
-        </NeuCard>
       </div>
-    </SidebarLayout>
+    </DashboardLayout>
   );
 };
 

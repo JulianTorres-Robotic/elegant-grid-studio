@@ -5,15 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import Index from "./pages/Index";
-import UsersPage from "./pages/UsersPage";
-import ReportsPage from "./pages/ReportsPage";
-import SettingsPage from "./pages/SettingsPage";
-import ProfilePage from "./pages/ProfilePage";
 import IDPPedidosPage from "./pages/IDPPedidosPage";
-import PerdidasPage from "./pages/PerdidasPage";
-import ReasignacionesPage from "./pages/ReasignacionesPage";
-import TICColegiosPage from "./pages/TICColegiosPage";
-import LicenciasProfesoresPage from "./pages/LicenciasProfesoresPage";
+import IDPEstadoPage from "./pages/IDPEstadoPage";
+import IDPRobotsPage from "./pages/IDPRobotsPage";
+import RECReasignacionPage from "./pages/RECReasignacionPage";
+import RECPerdidaPresencialPage from "./pages/RECPerdidaPresencialPage";
+import RECPerdidaVirtualPage from "./pages/RECPerdidaVirtualPage";
+import OPColegiosPage from "./pages/OPColegiosPage";
+import OPLicenciasProfesoresPage from "./pages/OPLicenciasProfesoresPage";
+import OPEstadoPedidosPage from "./pages/OPEstadoPedidosPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,15 +28,20 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            {/* IDP */}
             <Route path="/idp-pedidos" element={<IDPPedidosPage />} />
-            <Route path="/perdidas" element={<PerdidasPage />} />
-            <Route path="/reasignaciones" element={<ReasignacionesPage />} />
-            <Route path="/tic-colegios" element={<TICColegiosPage />} />
-            <Route path="/licencias-profesores" element={<LicenciasProfesoresPage />} />
+            <Route path="/idp-estado" element={<IDPEstadoPage />} />
+            <Route path="/idp-robots" element={<IDPRobotsPage />} />
+            {/* Recepción */}
+            <Route path="/rec-reasignacion" element={<RECReasignacionPage />} />
+            <Route path="/rec-perdida-presencial" element={<RECPerdidaPresencialPage />} />
+            <Route path="/rec-perdida-virtual" element={<RECPerdidaVirtualPage />} />
+            {/* Operaciones */}
+            <Route path="/op-colegios" element={<OPColegiosPage />} />
+            <Route path="/op-licencias-profesores" element={<OPLicenciasProfesoresPage />} />
+            <Route path="/op-estado-pedidos" element={<OPEstadoPedidosPage />} />
+            {/* General */}
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
