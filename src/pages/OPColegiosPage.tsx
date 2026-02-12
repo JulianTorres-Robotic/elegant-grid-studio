@@ -16,16 +16,17 @@ interface ColegioCard {
   codigoUnido: string;
   localidad: string;
   suscripcion: string;
+  ticket: string;
 }
 
 const OPColegiosPage = () => {
   const { toast } = useToast();
   const [cards, setCards] = useState<ColegioCard[]>([
-    { id: 1, nombre: "", codigoCorto: "", codigoUnido: "", localidad: "", suscripcion: "" },
+    { id: 1, nombre: "", codigoCorto: "", codigoUnido: "", localidad: "", suscripcion: "", ticket: "" },
   ]);
 
   const addCard = () => {
-    setCards((prev) => [...prev, { id: Date.now(), nombre: "", codigoCorto: "", codigoUnido: "", localidad: "", suscripcion: "" }]);
+    setCards((prev) => [...prev, { id: Date.now(), nombre: "", codigoCorto: "", codigoUnido: "", localidad: "", suscripcion: "", ticket: "" }]);
   };
 
   const removeCard = (id: number) => {
@@ -38,13 +39,13 @@ const OPColegiosPage = () => {
   };
 
   const handleCargar = () => {
-    const incomplete = cards.some((c) => !c.nombre || !c.codigoCorto || !c.codigoUnido || !c.localidad || !c.suscripcion);
+    const incomplete = cards.some((c) => !c.nombre || !c.codigoCorto || !c.codigoUnido || !c.localidad || !c.suscripcion || !c.ticket);
     if (incomplete) {
       toast({ title: "Campos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
       return;
     }
     toast({ title: "Colegios cargados", description: `${cards.length} colegio(s) cargado(s) correctamente.` });
-    setCards([{ id: Date.now(), nombre: "", codigoCorto: "", codigoUnido: "", localidad: "", suscripcion: "" }]);
+    setCards([{ id: Date.now(), nombre: "", codigoCorto: "", codigoUnido: "", localidad: "", suscripcion: "", ticket: "" }]);
   };
 
   return (
@@ -68,30 +69,18 @@ const OPColegiosPage = () => {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <Label>Nombre de Colegio <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="Nombre"
-                    value={card.nombre}
-                    onChange={(e) => updateCard(card.id, "nombre", e.target.value)}
-                  />
+                  <Input placeholder="Nombre" value={card.nombre} onChange={(e) => updateCard(card.id, "nombre", e.target.value)} />
                 </div>
                 <div>
                   <Label>Código Corto <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="Código corto"
-                    value={card.codigoCorto}
-                    onChange={(e) => updateCard(card.id, "codigoCorto", e.target.value)}
-                  />
+                  <Input placeholder="Código corto" value={card.codigoCorto} onChange={(e) => updateCard(card.id, "codigoCorto", e.target.value)} />
                 </div>
                 <div>
                   <Label>Código Unido <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="Código unido"
-                    value={card.codigoUnido}
-                    onChange={(e) => updateCard(card.id, "codigoUnido", e.target.value)}
-                  />
+                  <Input placeholder="Código unido" value={card.codigoUnido} onChange={(e) => updateCard(card.id, "codigoUnido", e.target.value)} />
                 </div>
                 <div>
                   <Label>Localidad <span className="text-destructive">*</span></Label>
@@ -102,9 +91,12 @@ const OPColegiosPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label># Ticket <span className="text-destructive">*</span></Label>
+                  <Input placeholder="Número de ticket" value={card.ticket} onChange={(e) => updateCard(card.id, "ticket", e.target.value)} />
+                </div>
               </div>
 
-              {/* Subscription buttons */}
               <div className="mt-4">
                 <Label>Tipo de Suscripción <span className="text-destructive">*</span></Label>
                 <div className="flex gap-3 mt-2">

@@ -6,23 +6,50 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle } from "lucide-react";
-import { cartillas } from "@/data/moduleData";
+import { cartillas, cartillasData, type CartillaInfo } from "@/data/moduleData";
 import { useToast } from "@/hooks/use-toast";
+
+const CartillaDetail = ({ info }: { info: CartillaInfo }) => (
+  <NeuCard className="p-4 neu-inset">
+    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Detalle de Cartilla</h4>
+    <div className="grid grid-cols-2 gap-2 text-sm">
+      <p className="text-muted-foreground">Número:</p>
+      <p className="font-mono font-semibold">{info.numero}</p>
+      <p className="text-muted-foreground">Tipo:</p>
+      <p>{info.tipo}</p>
+      <p className="text-muted-foreground">Categoría:</p>
+      <p>{info.categoria}</p>
+      <p className="text-muted-foreground">Colegio:</p>
+      <p>{info.colegio}</p>
+      <p className="text-muted-foreground">Robot:</p>
+      <p>{info.robot}</p>
+      <p className="text-muted-foreground">Estado:</p>
+      <p className={info.estado === "Activa" ? "text-success font-semibold" : info.estado === "Perdida" ? "text-destructive font-semibold" : "text-warning font-semibold"}>{info.estado}</p>
+    </div>
+  </NeuCard>
+);
 
 const RECPerdidaPresencialPage = () => {
   const { toast } = useToast();
   const [cartilla, setCartilla] = useState("");
+  const [ticket, setTicket] = useState("");
   const [search, setSearch] = useState("");
 
   const filtered = cartillas.filter((c) => c.toLowerCase().includes(search.toLowerCase()));
+  const cartillaInfo = cartillasData.find((c) => c.numero === cartilla);
 
   const handleConfirm = () => {
     if (!cartilla) {
       toast({ title: "Campo requerido", description: "Seleccione un número de cartilla.", variant: "destructive" });
       return;
     }
+    if (!ticket) {
+      toast({ title: "Campo requerido", description: "Ingrese el número de ticket.", variant: "destructive" });
+      return;
+    }
     toast({ title: "Estado actualizado", description: `Cartilla ${cartilla} marcada como Perdida.` });
     setCartilla("");
+    setTicket("");
   };
 
   return (
@@ -43,19 +70,18 @@ const RECPerdidaPresencialPage = () => {
                 <SelectTrigger><SelectValue placeholder="Buscar cartilla..." /></SelectTrigger>
                 <SelectContent>
                   <div className="px-2 pb-2">
-                    <Input
-                      placeholder="Buscar..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="h-8 text-sm"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 text-sm" onClick={(e) => e.stopPropagation()} />
                   </div>
-                  {filtered.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
+                  {filtered.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {cartillaInfo && <CartillaDetail info={cartillaInfo} />}
+
+            <div>
+              <Label># Ticket <span className="text-destructive">*</span></Label>
+              <Input placeholder="Número de ticket" value={ticket} onChange={(e) => setTicket(e.target.value)} />
             </div>
             <Button className="w-full gap-2 bg-destructive hover:bg-destructive/90" onClick={handleConfirm}>
               <CheckCircle className="h-4 w-4" /> Confirmar y cambiar estado a Perdida
