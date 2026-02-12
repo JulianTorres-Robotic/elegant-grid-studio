@@ -15,6 +15,7 @@ interface PedidoCard {
   colegio: string;
   robot: string;
   cartilla: string;
+  ticket: string;
 }
 
 const SearchableSelect = ({
@@ -56,11 +57,11 @@ const SearchableSelect = ({
 const IDPPedidosPage = () => {
   const { toast } = useToast();
   const [cards, setCards] = useState<PedidoCard[]>([
-    { id: 1, cantidad: "", colegio: "", robot: "", cartilla: "" },
+    { id: 1, cantidad: "", colegio: "", robot: "", cartilla: "", ticket: "" },
   ]);
 
   const addCard = () => {
-    setCards((prev) => [...prev, { id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "" }]);
+    setCards((prev) => [...prev, { id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "", ticket: "" }]);
   };
 
   const removeCard = (id: number) => {
@@ -73,13 +74,13 @@ const IDPPedidosPage = () => {
   };
 
   const handleConfirm = () => {
-    const incomplete = cards.some((c) => !c.cantidad || !c.colegio || !c.robot || !c.cartilla);
+    const incomplete = cards.some((c) => !c.cantidad || !c.colegio || !c.robot || !c.cartilla || !c.ticket);
     if (incomplete) {
       toast({ title: "Campos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
       return;
     }
     toast({ title: "Pedido confirmado", description: `${cards.length} pedido(s) enviado(s) correctamente.` });
-    setCards([{ id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "" }]);
+    setCards([{ id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "", ticket: "" }]);
   };
 
   return (
@@ -90,7 +91,6 @@ const IDPPedidosPage = () => {
           <h1 className="text-2xl font-bold text-foreground">IDP - Pedidos de Licencias</h1>
         </div>
 
-        {/* Pedido cards */}
         <div className="space-y-4">
           {cards.map((card, idx) => (
             <NeuCard key={card.id} className="p-5">
@@ -104,49 +104,32 @@ const IDPPedidosPage = () => {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <Label># Licencias <span className="text-destructive">*</span></Label>
-                  <Input
-                    type="number"
-                    placeholder="Cantidad"
-                    value={card.cantidad}
-                    onChange={(e) => updateCard(card.id, "cantidad", e.target.value)}
-                  />
+                  <Input type="number" placeholder="Cantidad" value={card.cantidad} onChange={(e) => updateCard(card.id, "cantidad", e.target.value)} />
                 </div>
                 <div>
                   <Label>Colegio <span className="text-destructive">*</span></Label>
-                  <SearchableSelect
-                    value={card.colegio}
-                    onValueChange={(v) => updateCard(card.id, "colegio", v)}
-                    placeholder="Seleccionar colegio"
-                    options={colegios}
-                  />
+                  <SearchableSelect value={card.colegio} onValueChange={(v) => updateCard(card.id, "colegio", v)} placeholder="Seleccionar colegio" options={colegios} />
                 </div>
                 <div>
                   <Label>Robot <span className="text-destructive">*</span></Label>
-                  <SearchableSelect
-                    value={card.robot}
-                    onValueChange={(v) => updateCard(card.id, "robot", v)}
-                    placeholder="Seleccionar robot"
-                    options={robots}
-                  />
+                  <SearchableSelect value={card.robot} onValueChange={(v) => updateCard(card.id, "robot", v)} placeholder="Seleccionar robot" options={robots} />
                 </div>
                 <div>
                   <Label>Nº Cartilla <span className="text-destructive">*</span></Label>
-                  <SearchableSelect
-                    value={card.cartilla}
-                    onValueChange={(v) => updateCard(card.id, "cartilla", v)}
-                    placeholder="Seleccionar cartilla"
-                    options={cartillas}
-                  />
+                  <SearchableSelect value={card.cartilla} onValueChange={(v) => updateCard(card.id, "cartilla", v)} placeholder="Seleccionar cartilla" options={cartillas} />
+                </div>
+                <div>
+                  <Label># Ticket <span className="text-destructive">*</span></Label>
+                  <Input placeholder="Número de ticket" value={card.ticket} onChange={(e) => updateCard(card.id, "ticket", e.target.value)} />
                 </div>
               </div>
             </NeuCard>
           ))}
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-3">
           <Button variant="outline" onClick={addCard} className="gap-2">
             <Plus className="h-4 w-4" /> Agregar Pedido

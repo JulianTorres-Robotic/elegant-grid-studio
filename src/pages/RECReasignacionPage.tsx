@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
-import { colegios, cartillas } from "@/data/moduleData";
+import { colegios, cartillas, cartillasData, type CartillaInfo } from "@/data/moduleData";
 import { useToast } from "@/hooks/use-toast";
 
 const SearchableSelect = ({
@@ -33,18 +33,10 @@ const SearchableSelect = ({
         </SelectTrigger>
         <SelectContent>
           <div className="px-2 pb-2">
-            <Input
-              placeholder="Buscar..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 text-sm"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 text-sm" onClick={(e) => e.stopPropagation()} />
           </div>
           {filtered.length === 0 && <p className="text-sm text-muted-foreground px-3 py-2">Sin resultados</p>}
-          {filtered.map((o) => (
-            <SelectItem key={o} value={o}>{o}</SelectItem>
-          ))}
+          {filtered.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
         </SelectContent>
       </Select>
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
@@ -52,25 +44,53 @@ const SearchableSelect = ({
   );
 };
 
+const CartillaDetail = ({ info }: { info: CartillaInfo }) => (
+  <NeuCard className="p-4 neu-inset">
+    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Detalle de Cartilla</h4>
+    <div className="grid grid-cols-2 gap-2 text-sm">
+      <p className="text-muted-foreground">Número:</p>
+      <p className="font-mono font-semibold">{info.numero}</p>
+      <p className="text-muted-foreground">Tipo:</p>
+      <p>{info.tipo}</p>
+      <p className="text-muted-foreground">Categoría:</p>
+      <p>{info.categoria}</p>
+      <p className="text-muted-foreground">Colegio Actual:</p>
+      <p>{info.colegio}</p>
+      <p className="text-muted-foreground">Robot:</p>
+      <p>{info.robot}</p>
+      <p className="text-muted-foreground">Estado:</p>
+      <p className={info.estado === "Activa" ? "text-success font-semibold" : info.estado === "Perdida" ? "text-destructive font-semibold" : "text-warning font-semibold"}>{info.estado}</p>
+    </div>
+  </NeuCard>
+);
+
 const RECReasignacionPage = () => {
   const { toast } = useToast();
   const [cartilla, setCartilla] = useState("");
   const [colegioFinal, setColegioFinal] = useState("");
-  const [errors, setErrors] = useState<{ cartilla?: string; colegio?: string }>({});
+  const [ticket, setTicket] = useState("");
+  const [errors, setErrors] = useState<{ cartilla?: string; colegio?: string; ticket?: string }>({});
+  const [reasignacionExitosa, setReasignacionExitosa] = useState<{ cartilla: string; colegioAnterior: string; colegioFinal: string } | null>(null);
+
+  const cartillaInfo = cartillasData.find((c) => c.numero === cartilla);
 
   const validate = () => {
     const newErrors: typeof errors = {};
     if (!cartilla) newErrors.cartilla = "El número de cartilla es obligatorio.";
     if (!colegioFinal) newErrors.colegio = "El colegio final es obligatorio.";
+    if (!ticket) newErrors.ticket = "El número de ticket es obligatorio.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
     if (!validate()) return;
+    const colegioAnterior = cartillaInfo?.colegio || "Desconocido";
+    setReasignacionExitosa({ cartilla, colegioAnterior, colegioFinal });
     toast({ title: "Reasignación exitosa", description: `Cartilla ${cartilla} reasignada a ${colegioFinal}.` });
     setCartilla("");
     setColegioFinal("");
+    setTicket("");
     setErrors({});
   };
 
@@ -89,12 +109,15 @@ const RECReasignacionPage = () => {
               <Label>Nº de Cartilla <span className="text-destructive">*</span></Label>
               <SearchableSelect
                 value={cartilla}
-                onValueChange={(v) => { setCartilla(v); setErrors((e) => ({ ...e, cartilla: undefined })); }}
+                onValueChange={(v) => { setCartilla(v); setErrors((e) => ({ ...e, cartilla: undefined })); setReasignacionExitosa(null); }}
                 placeholder="Buscar cartilla..."
                 options={cartillas}
                 error={errors.cartilla}
               />
             </div>
+
+            {cartillaInfo && <CartillaDetail info={cartillaInfo} />}
+
             <div>
               <Label>Colegio Final <span className="text-destructive">*</span></Label>
               <SearchableSelect
@@ -105,9 +128,33 @@ const RECReasignacionPage = () => {
                 error={errors.colegio}
               />
             </div>
+            <div>
+              <Label># Ticket <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="Número de ticket"
+                value={ticket}
+                onChange={(e) => { setTicket(e.target.value); setErrors((prev) => ({ ...prev, ticket: undefined })); }}
+                className={errors.ticket ? "border-destructive" : ""}
+              />
+              {errors.ticket && <p className="text-xs text-destructive mt-1">{errors.ticket}</p>}
+            </div>
             <Button className="w-full gap-2" onClick={handleSubmit}>
               <RefreshCw className="h-4 w-4" /> Reasignar
             </Button>
+
+            {reasignacionExitosa && (
+              <NeuCard className="p-4 mt-4 neu-inset">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Detalle de Reasignación</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <p className="text-muted-foreground">Cartilla:</p>
+                  <p className="font-mono font-semibold">{reasignacionExitosa.cartilla}</p>
+                  <p className="text-muted-foreground">Colegio Anterior:</p>
+                  <p>{reasignacionExitosa.colegioAnterior}</p>
+                  <p className="text-muted-foreground">Colegio Final:</p>
+                  <p className="font-semibold text-primary">{reasignacionExitosa.colegioFinal}</p>
+                </div>
+              </NeuCard>
+            )}
           </div>
         </NeuCard>
       </div>

@@ -9,6 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { ListChecks, Search, Edit, Eye } from "lucide-react";
 import { pedidosProfesores, type PedidoProfesor } from "@/data/moduleData";
 
+const estadoBadgeClass = (estado: string) => {
+  if (estado === "Aprobado") return "bg-success text-success-foreground";
+  if (estado === "Pendiente") return "bg-warning text-warning-foreground";
+  return "bg-destructive text-destructive-foreground";
+};
+
 const OPEstadoPedidosPage = () => {
   const [busqueda, setBusqueda] = useState("");
   const [detalleOpen, setDetalleOpen] = useState(false);
@@ -33,26 +39,18 @@ const OPEstadoPedidosPage = () => {
           <h1 className="text-2xl font-bold text-foreground">OP - Estado de Pedidos Profesores</h1>
         </div>
 
-        {/* Search */}
         <NeuCard className="p-5">
           <div className="flex gap-3 items-end">
             <div className="flex-1">
               <Label>Buscar por pedido, ticket o colegio</Label>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Ej: PROF-001, TK-5501 o Colegio..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                />
-                <Button variant="outline" size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
+                <Input placeholder="Ej: PROF-001, TK-5501 o Colegio..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+                <Button variant="outline" size="icon"><Search className="h-4 w-4" /></Button>
               </div>
             </div>
           </div>
         </NeuCard>
 
-        {/* Table */}
         <NeuCard className="p-5 overflow-x-auto">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Pedidos Registrados</h3>
           <table className="w-full text-sm">
@@ -75,27 +73,15 @@ const OPEstadoPedidosPage = () => {
                   <td className="py-3">{p.colegio}</td>
                   <td className="py-3 text-center">{p.cantidadLicencias}</td>
                   <td className="py-3">
-                    <Badge className={p.estado === "Aprobado" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
-                      {p.estado}
-                    </Badge>
+                    <Badge className={estadoBadgeClass(p.estado)}>{p.estado}</Badge>
                   </td>
                   <td className="py-3 text-muted-foreground">{p.fecha}</td>
                   <td className="py-3">
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1"
-                        disabled={p.estado !== "Aprobado"}
-                      >
+                      <Button variant="ghost" size="sm" className="gap-1" disabled={p.estado !== "Aprobado"}>
                         <Edit className="h-3.5 w-3.5" /> Editar
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => handleDetalle(p)}
-                      >
+                      <Button variant="ghost" size="sm" className="gap-1" onClick={() => handleDetalle(p)}>
                         <Eye className="h-3.5 w-3.5" /> Detalle
                       </Button>
                     </div>
@@ -104,45 +90,25 @@ const OPEstadoPedidosPage = () => {
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No se encontraron pedidos.</p>
-          )}
+          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">No se encontraron pedidos.</p>}
         </NeuCard>
       </div>
 
-      {/* Detalle Overlay */}
       <GlassOverlay open={detalleOpen} onClose={() => setDetalleOpen(false)} side="right" title={`Detalle - ${selectedPedido?.id}`}>
         {selectedPedido && (
           <div className="space-y-4">
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ticket:</span>
-                <span className="font-medium">{selectedPedido.ticket}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Colegio:</span>
-                <span className="font-medium">{selectedPedido.colegio}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cantidad:</span>
-                <span className="font-medium">{selectedPedido.cantidadLicencias}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado:</span>
-                <Badge className={selectedPedido.estado === "Aprobado" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
-                  {selectedPedido.estado}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Fecha:</span>
-                <span>{selectedPedido.fecha}</span>
-              </div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Ticket:</span><span className="font-medium">{selectedPedido.ticket}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Colegio:</span><span className="font-medium">{selectedPedido.colegio}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Cantidad:</span><span className="font-medium">{selectedPedido.cantidadLicencias}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Estado:</span><Badge className={estadoBadgeClass(selectedPedido.estado)}>{selectedPedido.estado}</Badge></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Fecha:</span><span>{selectedPedido.fecha}</span></div>
             </div>
 
             {selectedPedido.licenciasCreadas && selectedPedido.licenciasCreadas.length > 0 && (
               <NeuCard className="p-4">
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Licencias Creadas</h4>
-                <div className="grid grid-cols-2 gap-2">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Licencias Creadas (PRRD)</h4>
+                <div className="grid grid-cols-1 gap-2">
                   {selectedPedido.licenciasCreadas.map((lic) => (
                     <div key={lic} className="font-mono text-xs bg-primary/10 text-primary px-3 py-2 rounded-lg text-center">
                       {lic}
