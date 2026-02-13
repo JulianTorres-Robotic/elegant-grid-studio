@@ -118,7 +118,7 @@ const IDPPedidosPage = () => {
                   <SearchableSelect value={card.robot} onValueChange={(v) => updateCard(card.id, "robot", v)} placeholder="Seleccionar robot" options={robots} />
                 </div>
                 <div>
-                  <Label>Nº Cartilla <span className="text-destructive">*</span></Label>
+                  <Label>Tipo Cartilla <span className="text-destructive">*</span></Label>
                   <SearchableSelect value={card.cartilla} onValueChange={(v) => updateCard(card.id, "cartilla", v)} placeholder="Seleccionar cartilla" options={cartillas} />
                 </div>
                 <div>

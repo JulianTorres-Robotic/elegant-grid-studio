@@ -93,6 +93,16 @@ const IDPEstadoPage = () => {
                       <Edit className="h-3.5 w-3.5" /> Editar
                     </Button>
                   </td>
+                  <td className="py-3">
+                    <Button variant="ghost" size="sm" className="gap-1" disabled={p.estado !== "Aprobado"} onClick={() => handleEdit(p.id)}>
+                      <Edit className="h-3.5 w-3.5" /> Detalle
+                    </Button>
+                  </td>
+                  <td className="py-3">
+                    <Button variant="ghost" size="sm" className="gap-1" disabled={p.estado !== "Aprobado"} onClick={() => handleEdit(p.id)}>
+                      <Edit className="h-3.5 w-3.5" /> Exportar
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
