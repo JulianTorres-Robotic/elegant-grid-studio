@@ -4,39 +4,27 @@ import NeuCard from "@/components/dashboard/NeuCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
-import { colegios, cartillas, cartillasData, type CartillaInfo } from "@/data/moduleData";
+import { colegios, cartillas, cartillasData, colegiosSuscripciones, type CartillaInfo } from "@/data/moduleData";
 import { useToast } from "@/hooks/use-toast";
 
 const SearchableSelect = ({
-  value,
-  onValueChange,
-  placeholder,
-  options,
-  error,
-}: {
-  value: string;
-  onValueChange: (v: string) => void;
-  placeholder: string;
-  options: string[];
-  error?: string;
-}) => {
+  value, onValueChange, placeholder, options, error,
+}: { value: string; onValueChange: (v: string) => void; placeholder: string; options: string[]; error?: string }) => {
   const [search, setSearch] = useState("");
   const filtered = options.filter((o) => o.toLowerCase().includes(search.toLowerCase()));
-
   return (
     <div>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className={error ? "border-destructive" : ""}>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
+        <SelectTrigger className={error ? "border-destructive" : ""}><SelectValue placeholder={placeholder} /></SelectTrigger>
         <SelectContent>
           <div className="px-2 pb-2">
             <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 text-sm" onClick={(e) => e.stopPropagation()} />
           </div>
           {filtered.length === 0 && <p className="text-sm text-muted-foreground px-3 py-2">Sin resultados</p>}
-          {filtered.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
+          {filtered.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
         </SelectContent>
       </Select>
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
@@ -58,6 +46,8 @@ const CartillaDetail = ({ info }: { info: CartillaInfo }) => (
       <p>{info.colegio}</p>
       <p className="text-muted-foreground">Robot:</p>
       <p>{info.robot}</p>
+      <p className="text-muted-foreground">Suscripción:</p>
+      <p className="font-semibold text-primary">{info.suscripcion}</p>
       <p className="text-muted-foreground">Estado:</p>
       <p className={info.estado === "Activa" ? "text-success font-semibold" : info.estado === "Perdida" ? "text-destructive font-semibold" : "text-warning font-semibold"}>{info.estado}</p>
     </div>
@@ -69,10 +59,18 @@ const RECReasignacionPage = () => {
   const [cartilla, setCartilla] = useState("");
   const [colegioFinal, setColegioFinal] = useState("");
   const [ticket, setTicket] = useState("");
+  const [showAllColegios, setShowAllColegios] = useState(false);
   const [errors, setErrors] = useState<{ cartilla?: string; colegio?: string; ticket?: string }>({});
-  const [reasignacionExitosa, setReasignacionExitosa] = useState<{ cartilla: string; colegioAnterior: string; colegioFinal: string } | null>(null);
+  const [reasignacionExitosa, setReasignacionExitosa] = useState<{ cartilla: string; colegioAnterior: string; colegioFinal: string; suscripcion: string } | null>(null);
 
   const cartillaInfo = cartillasData.find((c) => c.numero === cartilla);
+
+  // Filter colegios by matching suscripción unless checkbox is checked
+  const colegiosFiltrados = (() => {
+    if (showAllColegios || !cartillaInfo) return colegios;
+    const suscripcionCartilla = cartillaInfo.suscripcion;
+    return colegios.filter((c) => colegiosSuscripciones[c] === suscripcionCartilla);
+  })();
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -86,7 +84,7 @@ const RECReasignacionPage = () => {
   const handleSubmit = () => {
     if (!validate()) return;
     const colegioAnterior = cartillaInfo?.colegio || "Desconocido";
-    setReasignacionExitosa({ cartilla, colegioAnterior, colegioFinal });
+    setReasignacionExitosa({ cartilla, colegioAnterior, colegioFinal, suscripcion: cartillaInfo?.suscripcion || "" });
     toast({ title: "Reasignación exitosa", description: `Cartilla ${cartilla} reasignada a ${colegioFinal}.` });
     setCartilla("");
     setColegioFinal("");
@@ -109,7 +107,7 @@ const RECReasignacionPage = () => {
               <Label>Nº de Cartilla <span className="text-destructive">*</span></Label>
               <SearchableSelect
                 value={cartilla}
-                onValueChange={(v) => { setCartilla(v); setErrors((e) => ({ ...e, cartilla: undefined })); setReasignacionExitosa(null); }}
+                onValueChange={(v) => { setCartilla(v); setColegioFinal(""); setErrors((e) => ({ ...e, cartilla: undefined })); setReasignacionExitosa(null); }}
                 placeholder="Buscar cartilla..."
                 options={cartillas}
                 error={errors.cartilla}
@@ -118,13 +116,27 @@ const RECReasignacionPage = () => {
 
             {cartillaInfo && <CartillaDetail info={cartillaInfo} />}
 
+            {cartillaInfo && (
+              <div className="flex items-center space-x-2">
+                <Checkbox id="showAll" checked={showAllColegios} onCheckedChange={(v) => { setShowAllColegios(!!v); setColegioFinal(""); }} />
+                <label htmlFor="showAll" className="text-sm text-muted-foreground cursor-pointer">
+                  Mostrar todos los colegios (sin filtro de suscripción)
+                </label>
+              </div>
+            )}
+
             <div>
               <Label>Colegio Final <span className="text-destructive">*</span></Label>
+              {cartillaInfo && !showAllColegios && (
+                <p className="text-xs text-muted-foreground mb-1">
+                  Filtrando por suscripción: <span className="font-semibold text-primary">{cartillaInfo.suscripcion}</span>
+                </p>
+              )}
               <SearchableSelect
                 value={colegioFinal}
                 onValueChange={(v) => { setColegioFinal(v); setErrors((e) => ({ ...e, colegio: undefined })); }}
                 placeholder="Buscar colegio..."
-                options={colegios}
+                options={colegiosFiltrados}
                 error={errors.colegio}
               />
             </div>
@@ -152,6 +164,8 @@ const RECReasignacionPage = () => {
                   <p>{reasignacionExitosa.colegioAnterior}</p>
                   <p className="text-muted-foreground">Colegio Final:</p>
                   <p className="font-semibold text-primary">{reasignacionExitosa.colegioFinal}</p>
+                  <p className="text-muted-foreground">Suscripción:</p>
+                  <p className="font-semibold">{reasignacionExitosa.suscripcion}</p>
                 </div>
               </NeuCard>
             )}

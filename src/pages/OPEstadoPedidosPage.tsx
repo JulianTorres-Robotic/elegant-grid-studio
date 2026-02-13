@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ListChecks, Search, Edit, Eye } from "lucide-react";
+import { ListChecks, Search, Eye } from "lucide-react";
 import { pedidosProfesores, type PedidoProfesor } from "@/data/moduleData";
 
 const estadoBadgeClass = (estado: string) => {
@@ -72,19 +72,12 @@ const OPEstadoPedidosPage = () => {
                   <td className="py-3 font-medium">{p.ticket}</td>
                   <td className="py-3">{p.colegio}</td>
                   <td className="py-3 text-center">{p.cantidadLicencias}</td>
-                  <td className="py-3">
-                    <Badge className={estadoBadgeClass(p.estado)}>{p.estado}</Badge>
-                  </td>
+                  <td className="py-3"><Badge className={estadoBadgeClass(p.estado)}>{p.estado}</Badge></td>
                   <td className="py-3 text-muted-foreground">{p.fecha}</td>
                   <td className="py-3">
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="gap-1" disabled={p.estado !== "Aprobado"}>
-                        <Edit className="h-3.5 w-3.5" /> Editar
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1" onClick={() => handleDetalle(p)}>
-                        <Eye className="h-3.5 w-3.5" /> Detalle
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => handleDetalle(p)}>
+                      <Eye className="h-3.5 w-3.5" /> Detalle
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -104,20 +97,16 @@ const OPEstadoPedidosPage = () => {
               <div className="flex justify-between"><span className="text-muted-foreground">Estado:</span><Badge className={estadoBadgeClass(selectedPedido.estado)}>{selectedPedido.estado}</Badge></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Fecha:</span><span>{selectedPedido.fecha}</span></div>
             </div>
-
             {selectedPedido.licenciasCreadas && selectedPedido.licenciasCreadas.length > 0 && (
               <NeuCard className="p-4">
                 <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Licencias Creadas (PRRD)</h4>
                 <div className="grid grid-cols-1 gap-2">
                   {selectedPedido.licenciasCreadas.map((lic) => (
-                    <div key={lic} className="font-mono text-xs bg-primary/10 text-primary px-3 py-2 rounded-lg text-center">
-                      {lic}
-                    </div>
+                    <div key={lic} className="font-mono text-xs bg-primary/10 text-primary px-3 py-2 rounded-lg text-center">{lic}</div>
                   ))}
                 </div>
               </NeuCard>
             )}
-
             {(!selectedPedido.licenciasCreadas || selectedPedido.licenciasCreadas.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-4">No hay licencias creadas para este pedido.</p>
             )}

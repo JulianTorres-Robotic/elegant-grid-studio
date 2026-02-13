@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Plus, X, Check } from "lucide-react";
-import { colegios, robots, cartillas } from "@/data/moduleData";
+import { colegios, robots, tiposCartillaGenerales } from "@/data/moduleData";
 import { useToast } from "@/hooks/use-toast";
 
 interface PedidoCard {
@@ -14,7 +14,7 @@ interface PedidoCard {
   cantidad: string;
   colegio: string;
   robot: string;
-  cartilla: string;
+  tipoCartilla: string;
   ticket: string;
 }
 
@@ -57,11 +57,11 @@ const SearchableSelect = ({
 const IDPPedidosPage = () => {
   const { toast } = useToast();
   const [cards, setCards] = useState<PedidoCard[]>([
-    { id: 1, cantidad: "", colegio: "", robot: "", cartilla: "", ticket: "" },
+    { id: 1, cantidad: "", colegio: "", robot: "", tipoCartilla: "", ticket: "" },
   ]);
 
   const addCard = () => {
-    setCards((prev) => [...prev, { id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "", ticket: "" }]);
+    setCards((prev) => [...prev, { id: Date.now(), cantidad: "", colegio: "", robot: "", tipoCartilla: "", ticket: "" }]);
   };
 
   const removeCard = (id: number) => {
@@ -74,13 +74,13 @@ const IDPPedidosPage = () => {
   };
 
   const handleConfirm = () => {
-    const incomplete = cards.some((c) => !c.cantidad || !c.colegio || !c.robot || !c.cartilla || !c.ticket);
+    const incomplete = cards.some((c) => !c.cantidad || !c.colegio || !c.robot || !c.tipoCartilla || !c.ticket);
     if (incomplete) {
       toast({ title: "Campos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
       return;
     }
     toast({ title: "Pedido confirmado", description: `${cards.length} pedido(s) enviado(s) correctamente.` });
-    setCards([{ id: Date.now(), cantidad: "", colegio: "", robot: "", cartilla: "", ticket: "" }]);
+    setCards([{ id: Date.now(), cantidad: "", colegio: "", robot: "", tipoCartilla: "", ticket: "" }]);
   };
 
   return (
@@ -118,8 +118,15 @@ const IDPPedidosPage = () => {
                   <SearchableSelect value={card.robot} onValueChange={(v) => updateCard(card.id, "robot", v)} placeholder="Seleccionar robot" options={robots} />
                 </div>
                 <div>
-                  <Label>Tipo Cartilla <span className="text-destructive">*</span></Label>
-                  <SearchableSelect value={card.cartilla} onValueChange={(v) => updateCard(card.id, "cartilla", v)} placeholder="Seleccionar cartilla" options={cartillas} />
+                  <Label>Tipo de Cartilla <span className="text-destructive">*</span></Label>
+                  <Select value={card.tipoCartilla} onValueChange={(v) => updateCard(card.id, "tipoCartilla", v)}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+                    <SelectContent>
+                      {tiposCartillaGenerales.map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label># Ticket <span className="text-destructive">*</span></Label>
