@@ -2,8 +2,9 @@ import GlassOverlay from "./GlassOverlay";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   FileText, ClipboardCheck, Bot,
-  RefreshCw, AlertTriangle, Key,
+  RefreshCw, AlertTriangle, Key, ClipboardList, CreditCard,
   School, GraduationCap, ListChecks,
+  Zap, Construction,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -33,6 +34,8 @@ const menuGroups: MenuGroup[] = [
       { label: "Reasignación", icon: RefreshCw, route: "/rec-reasignacion" },
       { label: "Pérdida Caso 1", icon: AlertTriangle, route: "/rec-perdida-presencial" },
       { label: "Pérdida Caso 2", icon: Key, route: "/rec-perdida-virtual" },
+      { label: "Estado Reasignaciones", icon: ClipboardList, route: "/rec-estado-reasignacion" },
+      { label: "Detalle de Cartilla", icon: CreditCard, route: "/rec-detalle-cartilla" },
     ],
   },
   {
@@ -41,6 +44,13 @@ const menuGroups: MenuGroup[] = [
       { label: "Carga de Colegios", icon: School, route: "/op-colegios" },
       { label: "Licencias Profesores", icon: GraduationCap, route: "/op-licencias-profesores" },
       { label: "Estado de Pedidos", icon: ListChecks, route: "/op-estado-pedidos" },
+    ],
+  },
+  {
+    title: "TIC",
+    modules: [
+      { label: "Activación de Licencias", icon: Zap, route: "/tic-activacion" },
+      { label: "Verificación Reasignaciones", icon: Construction, route: "/tic-verificacion" },
     ],
   },
 ];
@@ -57,7 +67,6 @@ const MenuOverlay = ({ open, onClose }: { open: boolean; onClose: () => void }) 
   return (
     <GlassOverlay open={open} onClose={onClose} title="Menú">
       <div className="flex flex-col gap-6">
-        {/* Dashboard link */}
         <button
           onClick={() => handleClick("/")}
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left ${
