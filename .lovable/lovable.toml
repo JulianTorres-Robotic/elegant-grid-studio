@@ -1,2 +1,5 @@
 [run]
 dev = "bunx --bun vite --host"
+
+[build]
+command = "bunx --bun vite build --mode development"
