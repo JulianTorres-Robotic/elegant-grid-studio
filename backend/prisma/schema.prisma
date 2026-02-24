@@ -1,0 +1,250 @@
+// ------------------------------------------------------------------
+// CONFIGURACIÓN PRISMA
+// ------------------------------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+  // Genera el cliente de JS/TS para interactuar con la BD desde el código.
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================================================================
+// MÓDULO 1: GESTIÓN DE CLIENTES Y PRODUCTOS (IDP & OPERACIONES)
+// ==================================================================
+
+// 0. Tipos de Suscripcion (Catálogo)
+// Normalización para escalabilidad (BÁSICA, PREMIUM, ESSENTIAL, GOLD, ETC.)
+model tipo_suscripcion {
+  pk_id_tipo_suscripcion Int           @id @default(autoincrement())
+  tsu_nombre             String        @unique // PREMIUM, BÁSICA, ESSENTIAL
+  suscripciones          suscripcion[]
+}
+
+// 1. Suscripciones
+// Define las instancias de planes (Lotes de códigos VEX).
+model suscripcion {
+  pk_id_suscripcion Int @id @default(autoincrement())
+  // sus_nombre SE ELIMINA (Redundante, ahora está en tipo_suscripcion)
+
+  sus_codigo_vex      String // Ej: 'XXXXXX' (Los 6 dígitos fijos: VEX123)
+  sus_cantidad_limite Int?   @default(50) // Límite de veces que se puede usar este código
+
+  // Relación con el Tipo (Catalogada)
+  fk_id_tipo_suscripcion Int
+  tipo_suscripcion       tipo_suscripcion @relation(fields: [fk_id_tipo_suscripcion], references: [pk_id_tipo_suscripcion])
+
+  // RELACIÓN MUCHOS A MUCHOS con Instituciones
+  instituciones_asociadas institucion_suscripcion[]
+}
+
+// 2. Instituciones (Colegios)
+// Son los clientes finales que recibirán las licencias.
+model institucion {
+  pk_id_institucion  Int     @id @default(autoincrement())
+  ins_nombre         String // Ej: 'Colegio Shakespeare'
+  ins_codigo_corto   String // Ej: 'SHK' (Alias visual para reportes)
+  ins_codigo_colegio String // Ej: '101' (El código YYYY de la licencia)
+  ins_codigo_obj     String? // Ej: 'ueb' (Para integración EVA: {"ueb":"Nombre"})
+  ins_estado         String  @default("ACTIVO") // ACTIVO, INACTIVO
+
+  // RELACIÓN MUCHOS A MUCHOS:
+  // Eliminamos la FK directa para permitir múltiples códigos.
+  suscripciones_asignadas institucion_suscripcion[]
+
+  // Un colegio puede tener muchos pedidos y muchas licencias activas.
+  pedidos   pedido[]
+  licencias licencia[]
+
+  // Historial: Para rastrear si este colegio envió (origen) o recibió (destino) licencias.
+  historial_reasignacion_origen  historial_reasignacion[] @relation("InsOrigen")
+  historial_reasignacion_destino historial_reasignacion[] @relation("InsDestino")
+}
+
+// 2.1 TABLA INTERMEDIA: Institución <-> Suscripción
+// Permite que un colegio tenga varios códigos VEX asignados (para sumar cupos).
+model institucion_suscripcion {
+  pk_id_ins_sus        Int      @id @default(autoincrement())
+  fk_id_institucion    Int
+  fk_id_suscripcion    Int
+  isu_fecha_asignacion DateTime @default(now())
+  isu_estado           String   @default("ACTIVO") // ACTIVO, INA (Agotada)
+
+  institucion institucion @relation(fields: [fk_id_institucion], references: [pk_id_institucion])
+  suscripcion suscripcion @relation(fields: [fk_id_suscripcion], references: [pk_id_suscripcion])
+
+  @@index([fk_id_institucion])
+  @@index([fk_id_suscripcion])
+}
+
+// 3. Robots (Hardware)
+// Catálogo de robots físicos disponibles. 
+// IDP define qué robots existen (M-Bot, Seguidor, etc).
+model robot {
+  pk_id_robot Int    @id @default(autoincrement())
+  rob_nombre  String @unique // Ej: 'M-Bot', 'Codyy'
+  rob_estado  String @default("ACTIVO")
+
+  // Un robot puede estar en muchos detalles de pedido (solicitado) y asignado a muchas licencias.
+  detalle_pedido detalle_pedido[]
+  licencias      licencia[]
+
+  // Historial: Para saber si una licencia cambió de tipo de robot (poco común pero posible).
+  historial_reasignacion_origen  historial_reasignacion[] @relation("RobOrigen")
+  historial_reasignacion_destino historial_reasignacion[] @relation("RobDestino")
+}
+
+// ==================================================================
+// MÓDULO 2: GESTIÓN DE PEDIDOS (RECEPCIÓN & VENTAS)
+// ==================================================================
+
+// 4. Estados de Pedido
+// Controla el flujo del pedido (PENDIENTE -> APROBADO -> COMPLETADO).
+model estado_pedido {
+  pk_id_estado_pedido Int      @id @default(autoincrement())
+  esp_nombre          String   @unique // PENDIENTE, EN_PROCESO, COMPLETADO
+  pedidos             pedido[]
+}
+
+// 4.1. Tipos de Pedido (NUEVO - Para diferenciar Ventas de Reposiciones)
+model tipo_pedido {
+  pk_id_tipo_pedido Int      @id @default(autoincrement())
+  tpe_nombre        String   @unique // VENTA, REPOSICION
+  pedidos           pedido[]
+}
+
+// 5. Pedidos (Cabecera)
+// Registro de la solicitud.
+// IMPORTANTE: Se vincula a 'Institución' porque el pedido es PARA el colegio,
+// aunque lo solicite un usuario interno (Operaciones).
+model pedido {
+  pk_id_pedido           Int       @id @default(autoincrement())
+  ped_fecha_solicitud    DateTime  @default(now())
+  ped_fecha_activacion   DateTime? // Cuando TIC completa el pedido
+  ped_fecha_modificacion DateTime  @updatedAt // SE ACTUALIZA SOLA
+  ped_ticket             String? // Ticket de soporte externo (Ej: TK-5501)
+
+  // Usuario interno que registró la solicitud en el sistema.
+  ped_usuario_solicitante String? // ID Keycloak (ej: f3e2a1...)
+
+  // El pedido pertenece a un colegio específico.
+  fk_id_institucion   Int
+  fk_id_estado_pedido Int
+  fk_id_tipo_pedido   Int // (Nuevo FK)
+
+  institucion   institucion   @relation(fields: [fk_id_institucion], references: [pk_id_institucion])
+  estado_pedido estado_pedido @relation(fields: [fk_id_estado_pedido], references: [pk_id_estado_pedido])
+  tipo_pedido   tipo_pedido   @relation(fields: [fk_id_tipo_pedido], references: [pk_id_tipo_pedido])
+
+  // Un pedido puede solicitar varios items (detalle) y genera X licencias.
+  detalles  detalle_pedido[]
+  licencias licencia[]
+}
+
+// 6. Detalle Pedido (Filas)
+// Permite pedidos mixtos: "5 Robots M-Bot" Y "2 Robots Codyy" en un solo Ticket.
+model detalle_pedido {
+  pk_id_detalle_pedido Int    @id @default(autoincrement())
+  dep_categoria        String // Ej: 'Venta Nueva', 'Renovación'
+  dep_cantidad         Int // Cantidad solicitada
+
+  fk_id_pedido Int
+  fk_id_robot  Int
+
+  pedido pedido @relation(fields: [fk_id_pedido], references: [pk_id_pedido])
+  robot  robot  @relation(fields: [fk_id_robot], references: [pk_id_robot])
+}
+
+// ==================================================================
+// MÓDULO 3: FÁBRICA DE LICENCIAS (TIC)
+// ==================================================================
+
+// 7. Cartillas
+// Contenedores físicos (Tarjetas impresas) o digitales.
+// ID Manual: Permite rangos paralelos controlados por backend (110xxxx, 910xxxx).
+model cartilla {
+  pk_id_cartilla Int    @id // ID MANUAL (Ej: 1100001)
+  car_serie      Int // Ej: 110, 120 (Físicas), 910 (Digitales)
+  car_tipo       String // 'FISICA', 'DIGITAL'
+  car_estado     String @default("DISPONIBLE") // DISPONIBLE, ASIGNADA, PERDIDA
+
+  // Una cartilla contiene UNA licencia.
+  licencias licencia[]
+}
+
+// 8. Estados de Licencia
+// Ciclo de vida de la licencia.
+model estado_licencia {
+  pk_id_estado_licencia Int        @id @default(autoincrement())
+  esl_nombre            String     @unique // ACTIVA, INACTIVA, PERDIDA, REVOCADA
+  licencias             licencia[]
+}
+
+// 9. Licencias (Producto Final)
+// La entidad central del sistema.
+// Código Único: XXXXXX(VEX) - YYYY(Colegio) - ZZZZZZ(Aleatorio)
+model licencia {
+  pk_id_licencia         Int      @id @default(autoincrement())
+  lic_codigo             String   @unique // El código completo generado
+  lic_fecha_creacion     DateTime @default(now())
+  lic_fecha_modificacion DateTime @updatedAt // SE ACTUALIZA SOLA (Reasignaciones, Cambios estado)
+
+  // Flags para reportes CSV de TIC
+  lic_es_profe Boolean @default(false) // TRUE si es licencia de docente
+
+  // RASTREABILIDAD COMPLETA (FKs)
+  fk_id_cartilla        Int // ¿En qué cartilla física/digital vive?
+  fk_id_institucion     Int // ¿A qué colegio pertenece hoy?
+  fk_id_robot           Int? // ¿Qué robot activa? (Opcional al inicio)
+  fk_id_estado_licencia Int // Estado actual
+  fk_id_pedido          Int // ¿En qué pedido se originó? (Trazabilidad financiera)
+
+  cartilla        cartilla        @relation(fields: [fk_id_cartilla], references: [pk_id_cartilla])
+  institucion     institucion     @relation(fields: [fk_id_institucion], references: [pk_id_institucion])
+  robot           robot?          @relation(fields: [fk_id_robot], references: [pk_id_robot])
+  estado_licencia estado_licencia @relation(fields: [fk_id_estado_licencia], references: [pk_id_estado_licencia])
+  pedido          pedido          @relation(fields: [fk_id_pedido], references: [pk_id_pedido])
+
+  // Historial de cambios de dueño/estado
+  historial_reasignacion historial_reasignacion[]
+}
+
+// 10. Historial de Movimientos
+// Registra cambios de colegio (reasignaciones) o problemas.
+model historial_reasignacion {
+  pk_id_historial_reasignacion Int      @id @default(autoincrement())
+  hir_fecha                    DateTime @default(now())
+  hir_motivo                   String? // Ej: "Error administrativo", "Transferencia autorizada"
+  hir_usuario_responsable      String? // Quién hizo el movimiento (ID Keycloak)
+
+  fk_id_licencia            Int
+  fk_id_institucion_origen  Int // Colegio anterior
+  fk_id_institucion_destino Int? // Colegio nuevo
+  fk_id_robot_origen        Int?
+  fk_id_robot_destino       Int?
+
+  licencia            licencia     @relation(fields: [fk_id_licencia], references: [pk_id_licencia])
+  institucion_origen  institucion  @relation("InsOrigen", fields: [fk_id_institucion_origen], references: [pk_id_institucion])
+  institucion_destino institucion? @relation("InsDestino", fields: [fk_id_institucion_destino], references: [pk_id_institucion])
+  robot_origen        robot?       @relation("RobOrigen", fields: [fk_id_robot_origen], references: [pk_id_robot])
+  robot_destino       robot?       @relation("RobDestino", fields: [fk_id_robot_destino], references: [pk_id_robot])
+}
+
+// ==================================================================
+// MÓDULO 4: AUDITORÍA Y SEGURIDAD
+// ==================================================================
+
+// 11. Auditoría
+// Logs de seguridad inmutables (quién hizo qué).
+model auditoria {
+  pk_id_auditoria Int      @id @default(autoincrement())
+  aud_fecha       DateTime @default(now())
+  aud_usuario     String? // ID Keycloak
+  aud_ip          String?
+  aud_accion      String // LOGIN, CREAR_LICENCIA, BORRAR_PEDIDO
+  aud_tabla       String? // Tabla afectada
+  aud_id_registro String? // ID afectado
+  aud_detalle     String?  @db.Text // JSON con detalles técnicos
+}

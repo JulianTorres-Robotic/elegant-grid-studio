@@ -1,0 +1,65 @@
+services:
+  # --- 1. BASE DE DATOS (MariaDB) ---
+  db:
+    image: mariadb:10.6
+    container_name: gal-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: gal_db
+      MYSQL_USER: gal_user
+      MYSQL_PASSWORD: gal_password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - gal-network
+    ports:
+      - "3306:3306" # Expuesto para que puedas verlo desde DBeaver/Workbench
+
+  # --- 2. SEGURIDAD (Keycloak) ---
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: gal-auth
+    command: start-dev
+    environment:
+      KC_DB: mariadb
+      KC_DB_URL: jdbc:mariadb://db:3306/keycloak
+      KC_DB_USERNAME: gal_user
+      KC_DB_PASSWORD: gal_password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - gal-network
+
+  # --- 3. BACKEND (API - Placeholder por ahora) ---
+  backend:
+    build: ./backend
+    container_name: gal-backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - gal-network
+
+  # --- 4. FRONTEND (Tu App Vue) ---
+  frontend:
+    build: ./frontend
+    container_name: gal-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Vital para que los cambios se vean en Windows
+    networks:
+      - gal-network
+
+volumes:
+  db_data:
+
+networks:
+  gal-network:
+    driver: bridge

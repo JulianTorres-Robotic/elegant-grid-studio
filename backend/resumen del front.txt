@@ -1,0 +1,42 @@
+Reporte de Revisión del Frontend
+Información General
+Framework: React + Vite
+Lenguaje: TypeScript
+Estilos: Tailwind CSS
+Componentes UI: Shadcn/ui (basado en Radix UI)
+Gestión de Estado/Data: TanStack Query (React Query)
+Rutas: React Router DOM
+Validación de Formularios: React Hook Form + Zod
+Estructura de Módulos (Navegación y Rutas)
+1. IDP
+Se han identificado las siguientes rutas y páginas asociadas:
+
+/idp-pedidos -> IDPPedidosPage (Gestión de Pedidos de Licencia)
+/idp-estado -> IDPEstadoPage
+/idp-robots -> IDPRobotsPage
+En el menú lateral (Sidebar), existen enlaces para "Pedidos de Licencia".
+
+2. Recepción (REC)
+Aunque en el menú lateral algunos ítems parecen agruparse bajo la sección "IDP" (como "Pérdidas y Recepción"), existen rutas específicas con prefijo rec-:
+
+/rec-reasignacion -> RECReasignacionPage ("Reasignaciones" en el menú)
+/rec-perdida-presencial -> RECPerdidaPresencialPage
+/rec-perdida-virtual -> RECPerdidaVirtualPage ("Pérdidas y Recepción" en el menú)
+3. TIC / Operaciones
+No existe una sección llamada explícitamente "TIC" en el nivel superior del menú, pero se encontró la sección "Operaciones" que contiene:
+
+Gestión Colegios: La ruta es /op-colegios (en App.tsx) o /tic-colegios (en Sidebar - Nota: Hay una discrepancia entre el Sidebar /tic-colegios y la ruta definida en App.tsx /op-colegios que deberá corregirse).
+Licencias Profesores: Ruta /op-licencias-profesores.
+Observaciones
+Discrepancia de Rutas: En 
+AppSidebar.tsx
+ el enlace a colegios apunta a /tic-colegios, pero en 
+App.tsx
+ la ruta definida es /op-colegios. Esto hará que el enlace del menú falle (404) si no se corrige.
+Docker: Se detectaron archivos 
+Dockerfile
+ y 
+docker-compose.yml
+, los cuales se ignorarán según sus instrucciones.
+Conclusión
+El frontend tiene la base para los tres módulos requeridos. Se requiere un backend que soporte estas rutas y la lógica de datos correspondiente.
