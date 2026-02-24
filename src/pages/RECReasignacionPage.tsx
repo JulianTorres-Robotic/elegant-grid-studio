@@ -1,0 +1,179 @@
+import { useState } from "react";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import NeuCard from "@/components/dashboard/NeuCard";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw } from "lucide-react";
+import { colegios, cartillas, cartillasData, colegiosSuscripciones, type CartillaInfo } from "@/data/moduleData";
+import { useToast } from "@/hooks/use-toast";
+
+const SearchableSelect = ({
+  value, onValueChange, placeholder, options, error,
+}: { value: string; onValueChange: (v: string) => void; placeholder: string; options: string[]; error?: string }) => {
+  const [search, setSearch] = useState("");
+  const filtered = options.filter((o) => o.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className={error ? "border-destructive" : ""}><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectContent>
+          <div className="px-2 pb-2">
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 text-sm" onClick={(e) => e.stopPropagation()} />
+          </div>
+          {filtered.length === 0 && <p className="text-sm text-muted-foreground px-3 py-2">Sin resultados</p>}
+          {filtered.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  );
+};
+
+const CartillaDetail = ({ info }: { info: CartillaInfo }) => (
+  <NeuCard className="p-4 neu-inset">
+    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Detalle de Cartilla</h4>
+    <div className="grid grid-cols-2 gap-2 text-sm">
+      <p className="text-muted-foreground">Número:</p>
+      <p className="font-mono font-semibold">{info.numero}</p>
+      <p className="text-muted-foreground">Tipo:</p>
+      <p>{info.tipo}</p>
+      <p className="text-muted-foreground">Categoría:</p>
+      <p>{info.categoria}</p>
+      <p className="text-muted-foreground">Colegio Actual:</p>
+      <p>{info.colegio}</p>
+      <p className="text-muted-foreground">Robot:</p>
+      <p>{info.robot}</p>
+      <p className="text-muted-foreground">Suscripción:</p>
+      <p className="font-semibold text-primary">{info.suscripcion}</p>
+      <p className="text-muted-foreground">Estado:</p>
+      <p className={info.estado === "Activa" ? "text-success font-semibold" : info.estado === "Perdida" ? "text-destructive font-semibold" : "text-warning font-semibold"}>{info.estado}</p>
+    </div>
+  </NeuCard>
+);
+
+const RECReasignacionPage = () => {
+  const { toast } = useToast();
+  const [cartilla, setCartilla] = useState("");
+  const [colegioFinal, setColegioFinal] = useState("");
+  const [ticket, setTicket] = useState("");
+  const [showAllColegios, setShowAllColegios] = useState(false);
+  const [errors, setErrors] = useState<{ cartilla?: string; colegio?: string; ticket?: string }>({});
+  const [reasignacionExitosa, setReasignacionExitosa] = useState<{ cartilla: string; colegioAnterior: string; colegioFinal: string; suscripcion: string } | null>(null);
+
+  const cartillaInfo = cartillasData.find((c) => c.numero === cartilla);
+
+  // Filter colegios by matching suscripción unless checkbox is checked
+  const colegiosFiltrados = (() => {
+    if (showAllColegios || !cartillaInfo) return colegios;
+    const suscripcionCartilla = cartillaInfo.suscripcion;
+    return colegios.filter((c) => colegiosSuscripciones[c] === suscripcionCartilla);
+  })();
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    if (!cartilla) newErrors.cartilla = "El número de cartilla es obligatorio.";
+    if (!colegioFinal) newErrors.colegio = "El colegio final es obligatorio.";
+    if (!ticket) newErrors.ticket = "El número de ticket es obligatorio.";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validate()) return;
+    const colegioAnterior = cartillaInfo?.colegio || "Desconocido";
+    setReasignacionExitosa({ cartilla, colegioAnterior, colegioFinal, suscripcion: cartillaInfo?.suscripcion || "" });
+    toast({ title: "Reasignación exitosa", description: `Cartilla ${cartilla} reasignada a ${colegioFinal}.` });
+    setCartilla("");
+    setColegioFinal("");
+    setTicket("");
+    setErrors({});
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">Recepción - Reasignación</h1>
+        </div>
+
+        <NeuCard className="p-6 max-w-lg mx-auto">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">Reasignar Cartilla</h3>
+          <div className="space-y-4">
+            <div>
+              <Label>Nº de Cartilla <span className="text-destructive">*</span></Label>
+              <SearchableSelect
+                value={cartilla}
+                onValueChange={(v) => { setCartilla(v); setColegioFinal(""); setErrors((e) => ({ ...e, cartilla: undefined })); setReasignacionExitosa(null); }}
+                placeholder="Buscar cartilla..."
+                options={cartillas}
+                error={errors.cartilla}
+              />
+            </div>
+
+            {cartillaInfo && <CartillaDetail info={cartillaInfo} />}
+
+            {cartillaInfo && (
+              <div className="flex items-center space-x-2">
+                <Checkbox id="showAll" checked={showAllColegios} onCheckedChange={(v) => { setShowAllColegios(!!v); setColegioFinal(""); }} />
+                <label htmlFor="showAll" className="text-sm text-muted-foreground cursor-pointer">
+                  Mostrar todos los colegios (sin filtro de suscripción)
+                </label>
+              </div>
+            )}
+
+            <div>
+              <Label>Colegio Final <span className="text-destructive">*</span></Label>
+              {cartillaInfo && !showAllColegios && (
+                <p className="text-xs text-muted-foreground mb-1">
+                  Filtrando por suscripción: <span className="font-semibold text-primary">{cartillaInfo.suscripcion}</span>
+                </p>
+              )}
+              <SearchableSelect
+                value={colegioFinal}
+                onValueChange={(v) => { setColegioFinal(v); setErrors((e) => ({ ...e, colegio: undefined })); }}
+                placeholder="Buscar colegio..."
+                options={colegiosFiltrados}
+                error={errors.colegio}
+              />
+            </div>
+            <div>
+              <Label># Ticket <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="Número de ticket"
+                value={ticket}
+                onChange={(e) => { setTicket(e.target.value); setErrors((prev) => ({ ...prev, ticket: undefined })); }}
+                className={errors.ticket ? "border-destructive" : ""}
+              />
+              {errors.ticket && <p className="text-xs text-destructive mt-1">{errors.ticket}</p>}
+            </div>
+            <Button className="w-full gap-2" onClick={handleSubmit}>
+              <RefreshCw className="h-4 w-4" /> Reasignar
+            </Button>
+
+            {reasignacionExitosa && (
+              <NeuCard className="p-4 mt-4 neu-inset">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Detalle de Reasignación</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <p className="text-muted-foreground">Cartilla:</p>
+                  <p className="font-mono font-semibold">{reasignacionExitosa.cartilla}</p>
+                  <p className="text-muted-foreground">Colegio Anterior:</p>
+                  <p>{reasignacionExitosa.colegioAnterior}</p>
+                  <p className="text-muted-foreground">Colegio Final:</p>
+                  <p className="font-semibold text-primary">{reasignacionExitosa.colegioFinal}</p>
+                  <p className="text-muted-foreground">Suscripción:</p>
+                  <p className="font-semibold">{reasignacionExitosa.suscripcion}</p>
+                </div>
+              </NeuCard>
+            )}
+          </div>
+        </NeuCard>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default RECReasignacionPage;
